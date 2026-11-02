@@ -3,3 +3,12 @@ checkpoints
 *.pdf
 *.npy
 _old_code
+claude.mdrt_data/
+rt_data
+claude.md
+runs/
+*.pyc
+*log
+*.gz
+*synctex.gz
+*.aux
