@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
 
-from bench.data import DATA, clone_pairs, load_larry
-
 
 def _pct_rank_by_branch(pt, branch):
     out = np.full(len(pt), np.nan)
@@ -64,15 +62,3 @@ def report(res):
         out[k] = [f"{v:.3f} [{lo:.3f}, {hi:.3f}]" for v, lo, hi in
                   zip(res[k], res[k + "_lo"], res[k + "_hi"])]
     return out.to_string(index=False)
-
-
-if __name__ == "__main__":
-    meta, clones = load_larry()
-    pairs = clone_pairs(meta["Time point"].to_numpy(), clones)
-    ps = pd.read_csv(DATA + "stateFate_inVitro_neutrophil_pseudotime.txt.gz", sep="\t")
-    pt = np.full(len(meta), np.nan)
-    pt[ps["Cell index"].to_numpy()] = ps["pseudotime"].to_numpy()
-    branch = np.where(np.isnan(pt), None, "Neutrophil")
-    rnd = np.random.default_rng(0).random(len(meta))
-    print("authors' pseudotime\n" + report(sister_order(pt, branch, pairs)))
-    print("random pseudotime\n" + report(sister_order(rnd, branch, pairs)))

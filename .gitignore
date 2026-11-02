@@ -12,3 +12,4 @@ runs/
 *.gz
 *synctex.gz
 *.aux
+.pytest_cache/
