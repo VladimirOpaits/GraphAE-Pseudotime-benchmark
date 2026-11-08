@@ -13,3 +13,4 @@ runs/
 *synctex.gz
 *.aux
 .pytest_cache/
+.vscode

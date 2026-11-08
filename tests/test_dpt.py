@@ -25,19 +25,30 @@ def curve(tmp_path):
 
 def test_pseudotime_aligned_ordered_and_rooted(curve, tmp_path):
     path, data, t = curve
-    pt, root = run_dpt(path, str(tmp_path / "a"), "Start", 2.0, neighbors_key="k15", n_dcs=2)
+    root = data.obs_names[0]
+    pt = run_dpt(path, str(tmp_path / "a"), [root], neighbors_key="k15", n_dcs=2)
     assert list(pt.index) == list(data.obs_names)
-    assert data.obs.loc[root, "label"] == "Start"
+    assert list(pt.columns) == [root]
+    assert pt.loc[root, root] == 0
     late = t > 0.2
-    assert spearmanr(pt.to_numpy()[late], t[late])[0] > 0.95
+    assert spearmanr(pt[root].to_numpy()[late], t[late])[0] > 0.95
 
 
 def test_stored_graph_equals_graph_built_in_script(curve, tmp_path):
-    path, _, _ = curve
-    pt1, r1 = run_dpt(path, str(tmp_path / "a"), "Start", 2.0, seed=3, neighbors_key="k15")
-    pt2, r2 = run_dpt(path, str(tmp_path / "b"), "Start", 2.0, seed=3, n_neighbors=15)
-    assert r1 == r2
+    path, data, _ = curve
+    roots = list(data.obs_names[[0, 5]])
+    pt1 = run_dpt(path, str(tmp_path / "a"), roots, neighbors_key="k15")
+    pt2 = run_dpt(path, str(tmp_path / "b"), roots, n_neighbors=15)
     assert np.allclose(pt1.to_numpy(), pt2.to_numpy())
+
+
+def test_many_roots_equal_single_runs(curve, tmp_path):
+    path, data, _ = curve
+    roots = list(data.obs_names[[0, 7, 30]])
+    many = run_dpt(path, str(tmp_path / "many"), roots, neighbors_key="k15")
+    for r in roots:
+        one = run_dpt(path, str(tmp_path / r), [r], neighbors_key="k15")
+        assert np.allclose(many[r].to_numpy(), one[r].to_numpy())
 
 
 def test_export_csv_keeps_cell_order(curve, tmp_path):

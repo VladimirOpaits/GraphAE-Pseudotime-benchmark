@@ -18,16 +18,14 @@ def export_csv(data, workdir, label_col="label", time_col="time"):
     return paths
 
 
-def run_dpt(adata_path, outdir, start, start_time, seed=0, neighbors_key=None, **kw):
+def run_dpt(adata_path, outdir, roots, neighbors_key=None, **kw):
+    roots = [str(r) for r in roots]
     cmd = [sys.executable, "trajectory/dpt.py", "--adata", adata_path,
-           "--start", start, "--start-time", str(start_time),
-           "--outdir", outdir, "--seed", str(seed)]
+           "--outdir", outdir, "--roots", *roots]
     if neighbors_key is not None:
         cmd += ["--neighbors-key", neighbors_key]
     for k, v in kw.items():
         cmd += [f"--{k.replace('_', '-')}", str(v)]
     subprocess.run(cmd, check=True)
     out = pd.read_csv(os.path.join(outdir, "dpt_pseudotime.csv"), index_col="cell_id", dtype={"cell_id": str})
-    with open(os.path.join(outdir, "dpt_root.txt")) as f:
-        root = f.read().strip()
-    return out["dpt"], root
+    return out[roots]

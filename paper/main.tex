@@ -5,8 +5,11 @@
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{xcolor}
 \usepackage[hidelinks]{hyperref}
 \usepackage[numbers]{natbib}
+
+\newcommand{\todo}[1]{\textcolor{red}{[#1]}}
 
 \title{Benchmarking graph AE methods for building embedding spaces for Pseudo-Time and Optimal Transport}
 \author{Vladimir Opait}
@@ -16,26 +19,191 @@
 
 \maketitle
 
-\begin{abstract}
-A short abstract in English.
-\end{abstract}
-
-\section{Introduction}
-This is the introduction.
-
 \section{Methods}
-We took the monocyte cells CD14, CD16, C1CD16, Monocyte prolif and CD83 from covid 2019 dataset
-from Single-cell multi-omics analysis of the immune response in COVID-19 paper
-\cite{stephenson2021single},and made the slingshot trajectory above the Harmony integrated 
-full RNA seq data and above the same data, but excluded top 10 marker genes in monocyte 
-differentiation program: 
 
+\subsection{Dataset}
+We use the in vitro hematopoietic differentiation time course of LARRY \cite{weinreb2020lineage}.
+Mouse progenitors were barcoded with the LARRY lentiviral library and profiled by inDrops at
+days 2, 4 and 6 of culture, starting from two populations: Lin$^-$Kit$^+$Sca1$^+$ (LSK) and
+Lin$^-$Kit$^+$Sca1$^-$ (LK). The data contain 130{,}887 cells and 25{,}289 genes in 35 sequencing
+libraries. We use the total-count normalized matrix provided by the authors. Cells carry one of
+eleven type annotations; 72{,}193 are undifferentiated, and the largest mature types are
+neutrophils (22{,}237) and monocytes (19{,}182).
+
+Clonal barcodes are available for 49{,}302 cells in 5{,}864 clones (median size 4, maximum 177).
+Of these clones, 3{,}894 have cells at more than one day, which gives 208{,}788 pairs of
+sister cells sampled at different days. Cells of a clone are not synchronous in differentiation,
+so a clone does not define a reference time for each cell, but it fixes which cell was sampled
+earlier.
+
+\paragraph{Batch structure.}
+Each sequencing run corresponds to a specific day and a starting population, LK or LSK. Any
+batch correction method would inevitably remove the signal of time and population as well, so
+we chose to measure the size of the batch effect and keep it in mind when interpreting the
+results.
+
+The combination of starting population, day of collection, well and cell type, a stratum, gives
+cells that are very close in biology, so differences between libraries within a stratum are
+mostly technical. We used strata with at least 300 cells from at least two libraries (17 for LSK,
+24 for LK). We computed 15 nearest neighbours in our PCA space, which is used throughout the
+experiment and is described in more detail below. For each stratum we compared the share of
+neighbours from the same library with the share expected under random mixing. A ratio of 1 means
+no library structure. The median ratio over strata is 1.03 for LSK (range 0.91--1.09, almost
+perfectly mixed) and 1.45 for LK (range 1.07--1.79, a batch effect is present).
+
+On top of these strata we computed an ANOVA of the principal components with library as the
+factor (variance explained by library, $\eta^2$, averaged over components with weights equal to
+their variance). Library explains 0.2\% of the variance for LSK and 4.6\% for LK.
+
+The LARRY data also let us measure the distance in this space between sister cells of the
+same day, well and cell type that were sequenced in different libraries. Their biology should be
+as close as possible, so the extra distance compared with sisters from the same library is
+attributed to the batch. As a reference, each sister pair was matched with a random pair. We kept
+one cell of the pair and replaced its sister with a random cell from another clone in the same
+stratum. If the sisters came from one library, the random cell was taken from that library too.
+If they came from different libraries, the random cell was taken from a library other than that
+of the kept cell. In PCA space, sisters from different libraries are further apart than sisters
+from the same library by 0 to 0.5 in median distance, depending on population and day (the
+largest difference is for LK at day 4). The median distance between sisters is 5--10, and
+between a cell and the random cell 9--14.
+
+We conclude that there is no critical batch effect for the LSK population, and for LK it is
+intermediate and we must accept it as a limitation when we will interpret the result
+
+\subsection{Evaluation}
+The pseudotime of a cell is compared with the time order within its clone. For a pair of sister
+cells from the same clone, sampled at different days and assigned to the same branch, the pair
+is correct if the cell from the later day has the larger pseudotime (ties count as 0.5). The
+accuracy \emph{acc} is the share of correct pairs. To measure how large the errors are, the
+pseudotime is converted to percentile ranks within the branch, and \emph{violation} is the mean
+of $\max(0, r_{\mathrm{early}} - r_{\mathrm{late}})$ over pairs. A random pseudotime gives
+acc $=0.5$ and violation $=1/6$. Confidence intervals come from a bootstrap over clones, not over
+cells or pairs.
+
+Branches are defined by the trajectory files of the original study. The neutrophil branch
+contains the 61{,}310 cells of their neutrophil trajectory (63{,}079 sister pairs); the monocyte
+branch contains the 36{,}148 remaining cells of their neutrophil--monocyte trajectory
+(34{,}089 pairs). Metrics are computed per branch and averaged with equal weight; a branch needs
+at least 200 pairs to enter the mean. As a check of the metric, the original pseudotime of the
+neutrophil trajectory gives acc $=0.940$ (95\% CI 0.924--0.956) and violation $=0.004$, and a
+random pseudotime gives acc $=0.501$ and violation $=0.167$.
+
+\todo{evaluation for Waddington-OT: decided (W1 for held-out day 4 after GPA alignment, as in Zhou 2026; see claude.md, Metrics, item 4), to be written up}
+
+\subsection{Trajectory methods}
+For each method we describe what it uses from the latent space. The assumptions for the latent
+spaces in Section~\ref{sec:latent} refer to these properties.
+
+\paragraph{Euclidean distance.}
+The pseudotime of a cell is its Euclidean distance to the root in the latent space. No graph is
+used. This baseline shows how much of the order comes from the latent space alone.
+\todo{root as for DPT}
+
+\emph{What it uses.} \todo{which properties of the latent space this baseline relies on}
+
+\paragraph{DPT.}
+Diffusion pseudotime (DPT) \cite{haghverdi2016diffusion} was computed with Scanpy on all cells.
+A $k$-nearest-neighbour graph was built on the latent space under evaluation, and DPT
+distance was computed from 10 diffusion components. The root was drawn at random from the 5\%
+of undifferentiated day-2 cells closest to the centroid of this population in the same latent
+space (at least 20 cells). With the latent space and the graph deterministic, the only source of
+randomness is the root.
+
+\emph{What it uses.} \todo{which properties of the latent space DPT relies on}
+
+\paragraph{Slingshot.}
+\todo{description}
+
+\emph{What it uses.} \todo{which properties of the latent space Slingshot relies on}
+
+\paragraph{Palantir.}
+Palantir \cite{setty2019palantir} computes pseudotime as the shortest-path distance from the root
+on a $k$-nearest-neighbour graph built on diffusion components, and also gives fate probabilities.
+\todo{parameters; how the latent space is passed in}
+
+\emph{What it uses.} \todo{which properties of the latent space Palantir relies on}
+
+\paragraph{Waddington-OT.}
+Waddington-OT \cite{schiebinger2019optimal} links cells of consecutive days by optimal transport.
+The cost of moving a cell to another is the squared Euclidean distance between them in the
+latent space, so the cost matrix is the only part that depends on the latent space. The
+transport is entropy-regularized (parameter $\varepsilon$) and unbalanced (parameter $\tau$),
+because cells divide and die between days. Growth rates are estimated from two KEGG pathways
+for mouse \cite{kanehisa2000kegg}: cell cycle (mmu04110) for proliferation and apoptosis
+(mmu04210) for death. The same two pathways were used to estimate growth on these data in
+PRESCIENT \cite{yeo2021prescient}. Of the 157 cell cycle genes, 154 are present in the data, and
+all 136 apoptosis genes are present (four genes appear under older symbols: Casc5, Sgol1, Skp1a,
+Sept4). Five genes (Atm, Gadd45a, Gadd45b, Gadd45g, Trp53) belong to both pathways. The gene
+lists were retrieved from KEGG on 6 November 2026. We compute the growth rates once and use the same values and the same $\varepsilon$ and
+$\tau$ for all latent spaces. The problem is solved with moscot \cite{klein2025moscot}.
+\todo{values of $\varepsilon$ and $\tau$; how scores are turned into growth rates}
+
+\emph{What it uses.} 
+WOT assumes Markov nature of the data, requieres enough density in time, so it wouldn't need to do too big 
+jumps in space, and it strongly depends on right hyperparameters.
+
+\subsection{Latent spaces}
+\label{sec:latent}
+For each latent space we state a general assumption and, where a trajectory method is expected to
+react differently, an assumption for that method.
+
+\paragraph{PCA.}
+Normalized counts were log-transformed ($\log(1+x)$), the 2000 most variable genes were
+selected with the Scanpy default (Seurat) criterion \cite{wolf2018scanpy}, each gene was scaled
+to unit variance with values clipped at 10, and the first 50 principal components were
+computed by exact eigendecomposition of the covariance matrix. All 130{,}887 cells were used.
+
+\emph{Assumption.} \todo{what this latent space changes in the geometry and why it should or should not help}
+
+\emph{By method.} \todo{only where a method is expected to react differently}
+
+\paragraph{Smoothed PCA.}
+A $k$-nearest-neighbour graph was built on the PCA coordinates by exact Euclidean
+search, with Scanpy connectivity weights $C$. The latent space was smoothed by $t$ steps of
+diffusion, $X_t = P^t X$ with $P = D^{-1}(C+I)$, where $D$ is the diagonal matrix of row sums
+of $C+I$. We use $t \in \{1, 3, 10\}$. This is a graph filter without learned weights and serves
+as the control for graph autoencoders.
+
+\emph{Assumption.} \todo{what this latent space changes in the geometry and why it should or should not help}
+
+\emph{By method.} \todo{only where a method is expected to react differently}
+
+\paragraph{MAGIC.}
+MAGIC \cite{vandijk2018magic} imputes expression by diffusion on a cell--cell affinity graph.
+\todo{parameters and how the latent is taken from the output}
+
+\emph{Assumption.} \todo{what this latent space changes in the geometry and why it should or should not help}
+
+\emph{By method.} \todo{only where a method is expected to react differently}
+
+\subsection{Benchmark grid}
+Table~\ref{tab:grid} lists the settings that are varied. The same $k$ is used for every graph in
+a run: the graph inside a frontend (smoothed PCA, MAGIC) and the graph on which the trajectory
+is computed. Every combination of $k$, latent space and trajectory method is run with 20 root
+seeds. Trained latent spaces are trained with 3 seeds. If the spread between trained models is
+small compared with the spread between roots, one model is used. A trained latent space without
+an internal graph does not depend on $k$, so one model serves all values of $k$.
+
+\begin{table}[ht]
+\centering\small
+\caption{Benchmark grid.}
+\label{tab:grid}
+\begin{tabular}{lp{0.62\linewidth}}
+\toprule
+Setting & Values \\
+\midrule
+Graph size $k$      & 10, 15, 30 \\
+Latent space        & PCA; smoothed PCA ($t = 1, 3, 10$); MAGIC \todo{more} \\
+Trajectory method   & Euclidean distance; DPT; Palantir; Slingshot; Waddington-OT \\
+Root seed           & 0--19 \\
+Training seed       & 0--2 (trained latent spaces) \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Results}
-Present the results here.
 
-\section{Conclusion}
-Summarize the findings.
+\todo{results}
 
 \bibliographystyle{plain}
 \bibliography{references}

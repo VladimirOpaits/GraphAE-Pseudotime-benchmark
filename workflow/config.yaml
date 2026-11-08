@@ -1,0 +1,7 @@
+k: [10, 15, 30]
+roots: {n_roots: 5, pool_size: 100, seed: 0}
+calib:
+  k: 15
+  n_dcs: [5 , 10, 15, 20, 30]
+frozen:
+  dpt: {n_dcs: 10}

@@ -1,0 +1,7 @@
+configfile: 'config.yaml'
+include: 'rules/data.smk'
+include: 'rules/calib.smk'
+include: 'rules/frontends.smk'
+include: 'rules/backends.smk'
+include: 'rules/metrics.smk'
+
