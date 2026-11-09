@@ -104,10 +104,7 @@ used. This baseline shows how much of the order comes from the latent space alon
 \paragraph{DPT.}
 Diffusion pseudotime (DPT) \cite{haghverdi2016diffusion} was computed with Scanpy on all cells.
 A $k$-nearest-neighbour graph was built on the latent space under evaluation, and DPT
-distance was computed from 10 diffusion components. The root was drawn at random from the 5\%
-of undifferentiated day-2 cells closest to the centroid of this population in the same latent
-space (at least 20 cells). With the latent space and the graph deterministic, the only source of
-randomness is the root.
+distance was computed from 10 diffusion components.
 
 \emph{What it uses.} \todo{which properties of the latent space DPT relies on}
 
@@ -177,11 +174,8 @@ MAGIC \cite{vandijk2018magic} imputes expression by diffusion on a cell--cell af
 \emph{By method.} \todo{only where a method is expected to react differently}
 
 \subsection{Benchmark grid}
-Table~\ref{tab:grid} lists the settings that are varied. The same $k$ is used for every graph in
-a run: the graph inside a frontend (smoothed PCA, MAGIC) and the graph on which the trajectory
-is computed. Every combination of $k$, latent space and trajectory method is run with 20 root
-seeds. Trained latent spaces are trained with 3 seeds. If the spread between trained models is
-small compared with the spread between roots, one model is used. A trained latent space without
+Table~\ref{tab:grid} lists the settings that are varied. Trained latent spaces are trained with 3 seeds. Since spread
+between roots resulted to be small, we don't rerun model with different roots. A trained latent space without
 an internal graph does not depend on $k$, so one model serves all values of $k$.
 
 \begin{table}[ht]
@@ -195,7 +189,6 @@ Setting & Values \\
 Graph size $k$      & 10, 15, 30 \\
 Latent space        & PCA; smoothed PCA ($t = 1, 3, 10$); MAGIC \todo{more} \\
 Trajectory method   & Euclidean distance; DPT; Palantir; Slingshot; Waddington-OT \\
-Root seed           & 0--19 \\
 Training seed       & 0--2 (trained latent spaces) \\
 \bottomrule
 \end{tabular}
@@ -207,5 +200,96 @@ Training seed       & 0--2 (trained latent spaces) \\
 
 \bibliographystyle{plain}
 \bibliography{references}
+
+\appendix
+\renewcommand{\thetable}{S\arabic{table}}
+\renewcommand{\thefigure}{S\arabic{figure}}
+\setcounter{table}{0}
+\setcounter{figure}{0}
+
+\section{Design checks}
+All checks in this section use the development clones (1{,}760 clones, 26{,}106 sister pairs in
+the two branches). The reported acc is the equal-weight mean over the neutrophil and monocyte
+branches; intervals are 95\% bootstrap intervals over clones.
+
+\subsection{Sensitivity to the root}
+Five roots were drawn at random from the 100 undifferentiated day-2 cells closest to the centroid
+of this population in PCA space. Table~\ref{tab:roots} shows acc for each root on PCA with
+$k=15$. The standard deviation over roots is 0.008--0.012, and for Palantir acc ranges from 0.870
+to 0.902 depending on the root. This is smaller than the bootstrap interval of a single method
+(width about 0.06), but latent spaces are compared on the same clones, so most of the clone
+sampling noise cancels in their differences while the effect of the root does not. We therefore
+report acc averaged over the five roots for Euclidean distance, DPT and Palantir. Slingshot uses
+only the cluster that contains the root, so it is run once.
+
+\begin{table}[ht]
+\centering\small
+\caption{Accuracy on PCA ($k=15$) for five roots.}
+\label{tab:roots}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{lcccccccc}
+\toprule
+Method & 68853 & 16220 & 57472 & 48236 & 60816 & Mean & SD & CI width \\
+\midrule
+Euclidean distance       & 0.823 & 0.826 & 0.830 & 0.838 & 0.815 & 0.826 & 0.008 & 0.066 \\
+DPT ($n_{\mathrm{dc}}=10$) & 0.870 & 0.873 & 0.878 & 0.891 & 0.865 & 0.876 & 0.010 & 0.064 \\
+Palantir (20 comp.)      & 0.881 & 0.891 & 0.895 & 0.902 & 0.870 & 0.888 & 0.012 & 0.061 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Settings of the trajectory methods}
+Settings were compared on PCA with $k=15$ (Table~\ref{tab:settings}; mean over the five roots,
+interval averaged over roots). Differences between settings are at most 0.013, well within the
+bootstrap interval. DPT uses 10 diffusion components (the Scanpy default). Palantir uses 20
+components; this value is only an upper bound for its eigengap-based selection.
+\todo{Slingshot}
+
+\begin{table}[ht]
+\centering\small
+\caption{Accuracy on PCA ($k=15$) for different settings of the trajectory methods.}
+\label{tab:settings}
+\begin{tabular}{llcc}
+\toprule
+Method & Setting & acc & 95\% CI \\
+\midrule
+Euclidean distance & --- & 0.826 & 0.795--0.861 \\
+\midrule
+DPT & 5 diffusion components  & 0.869 & 0.838--0.903 \\
+    & 10 diffusion components & 0.876 & 0.845--0.910 \\
+    & 15 diffusion components & 0.875 & 0.844--0.909 \\
+    & 20 diffusion components & 0.873 & 0.843--0.908 \\
+    & 30 diffusion components & 0.870 & 0.839--0.904 \\
+\midrule
+Palantir & 5 components  & 0.875 & 0.849--0.901 \\
+         & 10 components & 0.882 & 0.853--0.916 \\
+         & 20 components & 0.888 & 0.860--0.920 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Separate k for frontend and backend graphs}
+In the main grid the graph inside a frontend and the graph of the trajectory method use the same
+$k$. To check this choice, smoothed PCA ($t=3$) was built with $k_f \in \{10, 15, 30\}$ and DPT
+was run with $k_b \in \{10, 15, 30\}$ (root 68853; Table~\ref{tab:kcross}). Equal $k$ is never
+worse than unequal $k$ beyond the bootstrap interval. The only large difference is $k_f=30$,
+$k_b=10$, where acc drops to 0.701 (0.556 in the neutrophil branch).
+
+\begin{table}[ht]
+\centering\small
+\caption{Accuracy of DPT on smoothed PCA ($t=3$) for frontend graph size $k_f$ (rows) and
+backend graph size $k_b$ (columns). Intervals are about $\pm 0.03$ except for $k_f=30$, $k_b=10$
+(0.659--0.756).}
+\label{tab:kcross}
+\begin{tabular}{lccc}
+\toprule
+$k_f$ \textbackslash{} $k_b$ & 10 & 15 & 30 \\
+\midrule
+10 & \textbf{0.862} & 0.864 & 0.863 \\
+15 & 0.855 & \textbf{0.866} & 0.865 \\
+30 & 0.701 & 0.859 & \textbf{0.866} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \end{document}

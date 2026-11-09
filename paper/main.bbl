@@ -1,8 +1,7 @@
 \begin{thebibliography}{1}
 
 \bibitem{haghverdi2016diffusion}
-Laleh Haghverdi, Maren B{\"u}ttner, F.~Alexander Wolf, Florian Buettner, and
-  Fabian~J. Theis.
+Laleh Haghverdi, Maren B{\"u}ttner, F.~Alexander Wolf, Florian Buettner, and Fabian~J. Theis.
 \newblock Diffusion pseudotime robustly reconstructs lineage branching.
 \newblock {\em Nature Methods}, 13(10):845--848, 2016.
 
@@ -17,33 +16,23 @@ Dominik Klein, Giovanni Palla, Marius Lange, Michal Klein, Zoe Piran, et~al.
 \newblock {\em Nature}, 638:1065--1075, 2025.
 
 \bibitem{schiebinger2019optimal}
-Geoffrey Schiebinger, Jian Shu, Marcin Tabaka, Brian Cleary, Vidya Subramanian,
-  Aryeh Solomon, et~al.
-\newblock Optimal-transport analysis of single-cell gene expression identifies
-  developmental trajectories in reprogramming.
+Geoffrey Schiebinger, Jian Shu, Marcin Tabaka, Brian Cleary, Vidya Subramanian, Aryeh Solomon, et~al.
+\newblock Optimal-transport analysis of single-cell gene expression identifies developmental trajectories in reprogramming.
 \newblock {\em Cell}, 176(4):928--943, 2019.
 
 \bibitem{setty2019palantir}
-Manu Setty, Vaidotas Kiseliovas, Jacob Levine, Adam Gayoso, Linas Mazutis, and
-  Dana Pe'er.
-\newblock Characterization of cell fate probabilities in single-cell data with
-  {Palantir}.
+Manu Setty, Vaidotas Kiseliovas, Jacob Levine, Adam Gayoso, Linas Mazutis, and Dana Pe'er.
+\newblock Characterization of cell fate probabilities in single-cell data with {Palantir}.
 \newblock {\em Nature Biotechnology}, 37:451--460, 2019.
 
 \bibitem{vandijk2018magic}
-David van Dijk, Roshan Sharma, Juozas Nainys, Kristina Yim, Pooja Kathail,
-  Ambrose~J. Carr, Cassandra Burdziak, Kevin~R. Moon, Christine~L. Chaffer,
-  Diwakar Pattabiraman, Brian Bierie, Linas Mazutis, Guy Wolf, Smita
-  Krishnaswamy, and Dana Pe'er.
-\newblock Recovering gene interactions from single-cell data using data
-  diffusion.
+David van Dijk, Roshan Sharma, Juozas Nainys, Kristina Yim, Pooja Kathail, Ambrose~J. Carr, Cassandra Burdziak, Kevin~R. Moon, Christine~L. Chaffer, Diwakar Pattabiraman, Brian Bierie, Linas Mazutis, Guy Wolf, Smita Krishnaswamy, and Dana Pe'er.
+\newblock Recovering gene interactions from single-cell data using data diffusion.
 \newblock {\em Cell}, 174(3):716--729, 2018.
 
 \bibitem{weinreb2020lineage}
-Caleb Weinreb, Alejo Rodriguez-Fraticelli, Fernando~D. Camargo, and Allon~M.
-  Klein.
-\newblock Lineage tracing on transcriptional landscapes links state to fate
-  during differentiation.
+Caleb Weinreb, Alejo Rodriguez-Fraticelli, Fernando~D. Camargo, and Allon~M. Klein.
+\newblock Lineage tracing on transcriptional landscapes links state to fate during differentiation.
 \newblock {\em Science}, 367(6479):eaaw3381, 2020.
 
 \bibitem{wolf2018scanpy}
@@ -53,8 +42,7 @@ F.~Alexander Wolf, Philipp Angerer, and Fabian~J. Theis.
 
 \bibitem{yeo2021prescient}
 Grace Hui~Ting Yeo, Sachit~D. Saksena, and David~K. Gifford.
-\newblock Generative modeling of single-cell time series with {PRESCIENT}
-  enables prediction of cell trajectories with interventions.
+\newblock Generative modeling of single-cell time series with {PRESCIENT} enables prediction of cell trajectories with interventions.
 \newblock {\em Nature Communications}, 12:3222, 2021.
 
 \end{thebibliography}

@@ -28,3 +28,12 @@ def clone_pairs(day, clones):
         jj.append(b)
         cc.append(np.full(len(a), c))
     return np.concatenate(ii), np.concatenate(jj), np.concatenate(cc)
+
+
+def load_branches(n):
+    neu = pd.read_csv(DATA + "stateFate_inVitro_neutrophil_pseudotime.txt.gz", sep="\t")["Cell index"].to_numpy()
+    nm = pd.read_csv(DATA + "stateFate_inVitro_neutrophil_monocyte_trajectory.txt.gz", sep="\t")["Cell index"].to_numpy()
+    branch = np.full(n, None, dtype=object)
+    branch[nm] = "Monocyte"
+    branch[neu] = "Neutrophil"
+    return branch

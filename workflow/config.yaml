@@ -1,7 +1,12 @@
-k: [10, 15, 30]
-roots: {n_roots: 5, pool_size: 100, seed: 0}
+run: calib_v1
+split: {dev_frac: 0.3, seed: 0}
+roots: {n_roots: 5, pool_size: 100, seed: 0, n_used: 5}
+dpt: {n_dcs: 10}
+palantir: {n_components: 20, num_waypoints: 1200, seed: 20}
+slingshot: {cluster_by: leiden, seed: 0}
+score: {n_boot: 1000}
 calib:
+  frontend: pca
   k: 15
-  n_dcs: [5 , 10, 15, 20, 30]
-frozen:
-  dpt: {n_dcs: 10}
+  slingshot_resolution: [0.5, 1.0, 2.0]
+kcross: {t: 3, k: [10, 15, 30]}

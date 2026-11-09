@@ -1,7 +1,13 @@
-configfile: 'config.yaml'
-include: 'rules/data.smk'
-include: 'rules/calib.smk'
-include: 'rules/frontends.smk'
-include: 'rules/backends.smk'
-include: 'rules/metrics.smk'
+configfile: "workflow/config.yaml"
 
+
+rule all:
+    input:
+        f"runs/{config['run']}/calib_summary.csv"
+
+
+include: "rules/data.smk"
+include: "rules/frontends.smk"
+include: "rules/backends.smk"
+include: "rules/metrics.smk"
+include: "rules/calib.smk"
